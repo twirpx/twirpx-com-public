@@ -1,2 +1,7 @@
-# twirpx-com-issues
-www.twirpx.com issues
+# Публичный репозиторий www.twirpx.com
+
+Трекинг ошибок
+
+Идеи по улучшению
+
+Материалы для разработчиков
