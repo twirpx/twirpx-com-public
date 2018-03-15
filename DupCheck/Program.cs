@@ -12,8 +12,11 @@ using static System.String;
 namespace DupCheck {
     public class Program {
 
+        // ReSharper disable UnusedParameter.Global
+        // ReSharper disable UnusedMethodReturnValue.Global
+
         static Program() {
-            string path_app_data = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string path_app_data = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
             string path_program = Path.Combine(path_app_data, "Twirpx\\DupCheck");
             if (!Directory.Exists(path_program)) {
@@ -168,7 +171,7 @@ namespace DupCheck {
 
                 Console.WriteLine("Checking encrypted stream hash...");
                 if (Compare(dat_hash, dat_actual, StringComparison.InvariantCultureIgnoreCase) != 0) {
-                    throw new Exception("Encrypted stream hash check failed!");
+                    throw new Exception(Format("Encrypted stream hash check failed ({0} expected {1} actual)", dat_hash, dat_actual));
                 }
 
                 try {
@@ -206,7 +209,7 @@ namespace DupCheck {
                 Console.WriteLine("Checking compressed stream hash...");
 
                 if (Compare(gz_hash, gz_actual, StringComparison.InvariantCultureIgnoreCase) != 0) {
-                    throw new Exception("Compressed stream hash check failed");
+                    throw new Exception(Format("Compressed stream hash check failed ({0} expected {1} actual)", gz_hash, gz_actual));
                 }
 
                 DecompressDAT(txt_hash, gz_stream);
@@ -227,8 +230,8 @@ namespace DupCheck {
                 string txt_actual = HashMD5(txt_stream);
 
                 Console.WriteLine("Checking text file hash...");
-                if (Compare(txt_actual, txt_hash, StringComparison.InvariantCultureIgnoreCase) != 0) {
-                    throw new Exception("Text file hash check failed");
+                if (Compare(txt_hash, txt_actual, StringComparison.InvariantCultureIgnoreCase) != 0) {
+                    throw new Exception(Format("Text file hash check failed ({0} expected {1} actual)", txt_hash, txt_actual));
                 }
 
                 Console.WriteLine("Done");
@@ -266,7 +269,7 @@ namespace DupCheck {
         
         [ Verb(Aliases = "check") ]
         public static int Check(string path = null, bool delete = false, bool verbose = false) {
-            Download(false);
+            Download();
 
             if (IsNullOrEmpty(path)) {
                 path = Directory.GetCurrentDirectory();
@@ -283,26 +286,25 @@ namespace DupCheck {
                 while (!reader.EndOfStream) {
                     string line = reader.ReadLine();
 
+                    // ReSharper disable once PossibleNullReferenceException
                     string[] parts = line.Split(SEPARATORS, StringSplitOptions.RemoveEmptyEntries);
+                    
                     if (parts.Length < 3) {
                         continue;
                     }
 
-                    int file_id;
-                    if (!Int32.TryParse(parts[0], out file_id)) {
+                    if (!Int32.TryParse(parts[0], out int file_id)) {
                         continue;
                     }
 
-                    int size;
-                    if (!Int32.TryParse(parts[1], out size)) {
+                    if (!Int32.TryParse(parts[1], out _)) {
                         continue;
                     }
 
                     for (int i = 2; i < parts.Length; i++) {
                         string hash = parts[i].ToUpper();
 
-                        List<int> list;
-                        if (!hash_map.TryGetValue(hash, out list)) {
+                        if (!hash_map.TryGetValue(hash, out List<int> list)) {
                             list = new List<int>();
                             hash_map.Add(hash, list);
                         }
@@ -356,8 +358,7 @@ namespace DupCheck {
                     Console.WriteLine("    md5 = {0}", file_hash);
                 }
 
-                List<int> list;
-                if (hash_map.TryGetValue(file_hash, out list)) {
+                if (hash_map.TryGetValue(file_hash, out List<int> list)) {
                     Console.ForegroundColor = ConsoleColor.Yellow;
 
                     if (verbose) {
